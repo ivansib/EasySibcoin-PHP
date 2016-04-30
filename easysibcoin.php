@@ -1,14 +1,15 @@
 <?php
 /*
-EasyBitcoin-PHP
+EasySibcoin-PHP
 
-A simple class for making calls to Bitcoin's API using PHP.
-https://github.com/aceat64/EasyBitcoin-PHP
+A simple class for making calls to EasySibcoin's API using PHP.
+https://github.com/ivansib/EasyEasySibcoin-PHP
 
 ====================
 
 The MIT License (MIT)
 
+Copyright (c) 2016 Ivan Rublev
 Copyright (c) 2013 Andrew LeCody
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,39 +32,47 @@ THE SOFTWARE.
 
 ====================
 
-// Initialize Bitcoin connection/object
-$bitcoin = new Bitcoin('username','password');
+// Initialize EasySibcoin connection/object
+$sibcoin = new EasySibcoin('username','password');
 
 // Optionally, you can specify a host and port.
-$bitcoin = new Bitcoin('username','password','host','port');
+$sibcoin = new EasySibcoin('username','password','host','port');
 // Defaults are:
 //	host = localhost
-//	port = 8332
+//	port = 1944
 //	proto = http
 
 // If you wish to make an SSL connection you can set an optional CA certificate or leave blank
 // This will set the protocol to HTTPS and some CURL flags
-$bitcoin->setSSL('/full/path/to/mycertificate.cert');
+$sibcoin->setSSL('/full/path/to/mycertificate.cert');
 
-// Make calls to bitcoind as methods for your object. Responses are returned as an array.
-// Examples:
-$bitcoin->getinfo();
-$bitcoin->getrawtransaction('0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',1);
-$bitcoin->getblock('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f');
+// Make calls to sibcoind as methods for your object. Responses are returned as an array.
+// Examples (see easysibcoin_example.php):
+$sibcoin->getinfo();
+$sibcoin->getrawtransaction('6f3ea24fece8662adf981cbc1aae199579c825d0f594f4f1c16b3e38c2e1539c',1);
+$sibcoin->getblock('00000005608dfb4814f3ccb8ecfbbf648ed1f563063b5c96b6eb64f21d43e74b');
 
 // The full response (not usually needed) is stored in $this->response while the raw JSON is stored in $this->raw_response
 
-// When a call fails for any reason, it will return FALSE and put the error message in $this->error
+// When a call fails for any reason, it will throw EasySibcoinException 
+// and also put the error message in $this->error
 // Example:
-echo $bitcoin->error;
+echo $sibcoin->error;
 
 // The HTTP status code can be found in $this->status and will either be a valid HTTP status code or will be 0 if cURL was unable to connect.
 // Example:
-echo $bitcoin->status;
+echo $sibcoin->status;
 
 */
 
-class Bitcoin {
+namespace easysibcoin;
+
+require_once 'easysibcoin_exception.php';
+
+use easysibcoin\EasySibcoinException as EasySibcoinException;
+
+class EasySibcoin {
+    
     // Configuration options
     private $username;
     private $password;
@@ -89,7 +98,7 @@ class Bitcoin {
      * @param string $proto
      * @param string $url
      */
-    function __construct($username, $password, $host = 'localhost', $port = 8332, $url = null) {
+    function __construct($username, $password, $host = 'localhost', $port = 1944, $url = null) {
         $this->username      = $username;
         $this->password      = $password;
         $this->host          = $host;
@@ -109,6 +118,13 @@ class Bitcoin {
         $this->CACertificate = $certificate;
     }
 
+    /**
+     * 
+     * @param string $method
+     * @param array $params
+     * @return array
+     * @throws EasySibcoinException
+     */
     function __call($method, $params) {
         $this->status       = null;
         $this->error        = null;
@@ -176,11 +192,11 @@ class Bitcoin {
         }
 
         if ($this->response['error']) {
-            // If bitcoind returned an error, put that in $this->error
+            // If sibcoind returned an error, put that in $this->error
             $this->error = $this->response['error']['message'];
         }
         elseif ($this->status != 200) {
-            // If bitcoind didn't return a nice error message, we need to make our own
+            // If sibcoind didn't return a nice error message, we need to make our own
             switch ($this->status) {
                 case 400:
                     $this->error = 'HTTP_BAD_REQUEST';
@@ -198,7 +214,7 @@ class Bitcoin {
         }
 
         if ($this->error) {
-            return FALSE;
+            throw new EasySibcoinException($this->error);
         }
 
         return $this->response['result'];
