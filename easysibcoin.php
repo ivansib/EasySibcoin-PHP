@@ -193,7 +193,13 @@ class EasySibcoin {
 
         if ($this->response['error']) {
             // If sibcoind returned an error, put that in $this->error
-            $this->error = $this->response['error']['message'];
+            if ($this->response['error']['message']) {
+                $this->error = $this->response['error']['message'];
+            } elseif ($this->response['error']['code']) {
+                $this->error = 'Error code '.$this->response['error']['code'];
+            } else {
+                $this->error = 'Unknown error';
+            }
         }
         elseif ($this->status != 200) {
             // If sibcoind didn't return a nice error message, we need to make our own
